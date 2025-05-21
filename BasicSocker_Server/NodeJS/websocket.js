@@ -1,33 +1,34 @@
-const http = require('http');
-const WebSocket = require('ws');
-const path = require('path');
+const express = require('express')
+const http = require('http')
+const webSocket = require('ws')
+const cors = require('cors')
 
-const express = require('express');
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const app = express()
+app.use(cors())
 
-// Serve static files from React build
-app.use(express.static(path.join(__dirname, '../client/build')));
+const server = http.createServer(app)
+const wss = new webSocket.Server( {server})
 
-wss.on('connection', (ws) => {
-    console.log('New client connected');
+wss.on('connection', (ws)=> {
+    console.log('New client connected')
 
-    ws.on('message', (message) => {
-        console.log('received: %s', message);
+    ws.on('message', (message)=> {
+        console.log(`Received message', ${message}`)
 
-        // Broadcast to all clients
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message);
+        wss.clients.forEach((client)=>{
+            if(client.readyState === webSocket.OPEN){
+                client.send(message.toString())
             }
-        });
-    });
+        })
+    })
 
-    ws.on('close', () => console.log('Client disconnected'));
-});
+    ws.on('close', ()=>{
+        console.log('Client disconnected')
+    })
+})
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-});
+const port = 5000
+server.listen(port, ()=>{
+    console.log(`server was listening on the port : ${port}`)
+})
+
