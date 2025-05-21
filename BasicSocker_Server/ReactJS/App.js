@@ -1,42 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
+import './App.css';
+import React, { useEffect, useState } from 'react';
 
 function App() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const ws = useRef(null);
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [socket, setSocket] = useState(null)
 
-  useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:5000');
+  useEffect(()=>{
+    const newSocket = new WebSocket('ws://localhost:5000')
+    setSocket(newSocket)
 
-    ws.current.onmessage = (event) => {
-      setMessages(prev => [...prev, event.data]);
-    };
+    newSocket.onopen=()=>{
+      console.log('WebSocket connection established')
+    }
 
-    return () => ws.current.close();
-  }, []);
+    newSocket.onmessage=(event)=>{
+      const message = event.data.toString()
+      setMessages(prevMessages=>[...prevMessages, message])
+    }
+
+    newSocket.onclose=()=>{
+      console.log('WebSocket connection closed')
+    }
+
+    newSocket.onerror=(error)=>{
+      console.error(`Websocket, ${error}`)
+    }
+
+    return ()=>{
+      newSocket.close()
+    }
+
+  }, [])
 
   const sendMessage = () => {
-    if (input && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(input);
-      setMessages(prev => [...prev, `You: ${input}`]);
-      setInput('');
+    if(input.trim() && socket.readyState === WebSocket.OPEN) {
+      socket.send(input)
+      setInput('')
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Chat</h2>
-      <div style={{ border: '1px solid #ccc', height: 300, overflowY: 'auto', padding: 10 }}>
-        {messages.map((msg, i) => <div key={i}>{msg}</div>)}
-      </div>
-      <input
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        onKeyPress={e => e.key === 'Enter' && sendMessage()}
-        placeholder="Type your message..."
-        style={{ width: '80%', padding: '10px' }}
-      />
-      <button onClick={sendMessage}>Send</button>
+    <div className="App">
+     <div className='chat-window'>
+        {messages.map((message, index)=>(
+          <div key={index}>
+              {message}
+          </div>
+        )
+        )}
+     </div>
+     <input type='text' value={input} onChange={e=>setInput(e.target.value)} onKeyUp={e=>e.key === "Enter" && sendMessage()} />
+    <button onClick={sendMessage}>Send</button>
     </div>
   );
 }
